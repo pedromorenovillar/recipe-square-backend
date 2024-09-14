@@ -1,17 +1,18 @@
 from flask import Blueprint, request, jsonify
 from .db import get_db
 from pymongo.errors import DuplicateKeyError, PyMongoError
-from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt
 
 user_routes = Blueprint('user_routes', __name__)
 
 # API endpoint 1: registering a user in the DB
-@user_routes.route('/register', methods=['POST'])
+@user_routes.route('/register_user', methods=['POST'])
 def register_user():
   try:
     # Log the incoming JSON data from the frontend
     user_data = request.get_json()
-    hashed_password = generate_password_hash(user_data['password'], method='sha256')
+    print("Received data:", user_data)
+    hashed_password = bcrypt.hashpw(user_data["password"].encode('utf-8'), bcrypt.gensalt())
 
     db = get_db()
     users = db.users
