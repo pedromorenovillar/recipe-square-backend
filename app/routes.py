@@ -9,7 +9,7 @@ user_routes = Blueprint('user_routes', __name__)
 @user_routes.route('/register_user', methods=['POST'])
 def register_user():
   try:
-    # Log the incoming JSON data from the frontend
+    # Log the incoming JSON data from the frontend || TODO remove print log
     user_data = request.get_json()
     print("Received data:", user_data)
     hashed_password = bcrypt.hashpw(user_data["password"].encode('utf-8'), bcrypt.gensalt())
@@ -17,6 +17,7 @@ def register_user():
     user_data["username"] = user_data["username"].lower()
     user_data["email"] = user_data["email"].lower()
 
+    # Get users collection from DB
     db = get_db()
     users = db.users
 
@@ -27,7 +28,7 @@ def register_user():
     if existing_user:
       return jsonify({"error": "Username or email already exists"}), 400
 
-    # Insert the user into MongoDB
+    # Insert the user into MongoDB users collection
     new_user = {
         "username": user_data["username"],
         "email": user_data["email"],
@@ -49,6 +50,44 @@ def register_user():
     return jsonify({"error": "An unexpected error occurred"}), 500
   
 # API endpoint 2: login a user in the DB
+@user_routes.route('/login_user', methods=['POST'])
+def login_user():
+  try:
+    # Log the incoming JSON data from the frontend || TODO remove print log
+    login_data = request.get_json()
+    username = login_data.get("username")
+    password = login_data.get("password")
+    email = login_data.get("email")
+
+    print("Received data:", login_data)
+
+    username = username.lower()
+    password = password.lower()
+    email = email.lower()
+
+    # Get users collection from DB
+    db = get_db()
+    users = db.users
+
+    # Find user in DB by username or email
+    user = users.find_one({"$or": [{"username": username}, {"email": email}]})
+
+    if not user:
+      return jsonify({"error": "User not found"}), 404
+    
+    # Check if password matches password stored in DB
+    if bcrypt.checkpw(password.encode('utf-8'), user['password']):
+      return jsonify({"message": "Login successful"}), 200
+    else:
+      return jsonify({"error": "Invalid password"}), 400
+  
+  except Exception as e:
+    print(f"Error during login: {e}")
+    return jsonify({"error": "An error ocurred during login"}), 500
+
+      
+
+
 # API endpoint 3: updating a user in the DB
 # API endpoint 4: deleting a user in the DB
 
