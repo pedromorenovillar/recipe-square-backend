@@ -1,4 +1,5 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
+from functools import wraps
 from .db import get_db
 from pymongo.errors import PyMongoError
 import bcrypt
@@ -53,47 +54,68 @@ def register_user():
 @user_routes.route('/login_user', methods=['POST'])
 def login_user():
   try:
-    # Log the incoming JSON data from the frontend || TODO remove print log
     login_data = request.get_json()
-    username = login_data.get("username")
-    password = login_data.get("password")
-    email = login_data.get("email")
+    username = login_data.get("username").lower()
+    password = login_data.get("password").lower()
+    email = login_data.get("email").lower()
 
     print("Received data:", login_data)
 
-    username = username.lower()
-    password = password.lower()
-    email = email.lower()
-
-    # Get users collection from DB
     db = get_db()
     users = db.users
 
-    # Find user in DB by username or email
     user = users.find_one({"$or": [{"username": username}, {"email": email}]})
 
     if not user:
       return jsonify({"error": "User not found"}), 404
-    
-    # Check if password matches password stored in DB
+
     if bcrypt.checkpw(password.encode('utf-8'), user['password']):
+      session['user_id'] = str(user['_id'])
+      session['username'] = user['username']
+      print("Session data after login:", dict(session))
+
       return jsonify({"message": "Login successful"}), 200
     else:
       return jsonify({"error": "Invalid password"}), 400
-  
+
   except Exception as e:
     print(f"Error during login: {e}")
-    return jsonify({"error": "An error ocurred during login"}), 500
+    return jsonify({"error": "An error occurred during login"}), 500
 
-      
+# Decorator to check if the user is logged in
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return jsonify({"error": "Authentication required"}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+# Check if user is logged in
+@user_routes.route('/check_session', methods=['GET'])
+def check_session():
+    if 'user_id' in session:
+        return jsonify({"logged_in": True}), 200
+    else:
+        return jsonify({"logged_in": False}), 200
+
+# Log user out
+@user_routes.route('/logout', methods=['POST'])
+def logout():
+    session.clear()  # Clears session data
+    response = jsonify({"message": "Logged out successfully"})
+
+    # Expire the session cookie
+    response.set_cookie('session', '', expires=0, samesite='Lax', secure=False)
+
+    return response
 
 
-# API endpoint 3: updating a user in the DB
-# API endpoint 4: deleting a user in the DB
+# API endpoint 5: updating a user in the DB
+# API endpoint 6: deleting a user in the DB
 
-# API endpoint 5: adding a recipe in the DB
-# API endpoint 6: updating a recipe in the DB
-# API endpoint 7: deleting a recipe in the DB
+# API endpoint 7: adding a recipe in the DB
+
 
 # API endpoint 8: adding a comment in the DB
 # API endpoint 9: updating a comment in the DB

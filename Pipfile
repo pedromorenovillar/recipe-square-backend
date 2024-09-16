@@ -9,6 +9,7 @@ flask-cors = "*"
 pymongo = "*"
 python-dotenv = "*"
 bcrypt = "*"
+flask-session = "*"
 
 [dev-packages]
 
