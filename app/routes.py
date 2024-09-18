@@ -59,7 +59,7 @@ def login_user():
     password = login_data.get("password").lower()
     email = login_data.get("email").lower()
 
-    print("Received data:", login_data)
+    print("Received data:", login_data) # TO DO: remove log
 
     db = get_db()
     users = db.users
