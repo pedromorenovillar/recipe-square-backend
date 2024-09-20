@@ -81,7 +81,9 @@ def login_user():
 
       return jsonify({
         "message": "Login successful",
-        "is_admin": session['is_admin']
+        "is_admin": session['is_admin'],
+        "user_id": session['user_id'],
+        "username": session['username']
       }), 200
     else:
       return jsonify({"error": "Invalid password"}), 400
@@ -90,47 +92,9 @@ def login_user():
     print(f"Error during login: {e}")
     return jsonify({"error": "An error occurred during login"}), 500
 
-# Check if user is logged in
-@user_routes.route('/check_session', methods=['GET'])
-def check_session():
-    if 'user_id' in session:
-        db = get_db()
-        users = db.users
-        user_id = session['user_id']
-        
-        # Convert string to ObjectId
-        try:
-            user_id = ObjectId(user_id)
-        except Exception as e:
-            print(f"Error converting user_id to ObjectId: {e}")
-            return jsonify({'logged_in': False, 'is_admin': False}), 200
-
-        user = users.find_one({"_id": user_id})
-
-        print("Session data during check_session:", dict(session))
-        print("User fetched from DB:", user)
-
-        if user:
-            is_admin = user.get('is_admin', False)
-            username = user.get('username', 'unknown')
-            return jsonify({
-                'logged_in': True,
-                'is_admin': is_admin,
-                'username': username,
-            })
-        else:
-            return jsonify({
-                'logged_in': False,
-                'is_admin': False
-            }), 200
-    else:
-        return jsonify({
-            'logged_in': False,
-            'is_admin': False
-        }), 200
 
 
-# Log user out
+# API endpoint 3: Log user out
 @user_routes.route('/logout', methods=['POST'])
 def logout():
     session.clear()
