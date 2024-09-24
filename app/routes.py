@@ -3,6 +3,18 @@ from bson import ObjectId
 from .db import get_db
 from pymongo.errors import PyMongoError
 import bcrypt
+import cloudinary
+import cloudinary.uploader
+from cloudinary.utils import cloudinary_url
+from app.config import Config
+from datetime import datetime, timezone
+from pymongo import DESCENDING
+
+cloudinary.config(
+    cloud_name=Config.CLOUDINARY_CLOUD_NAME,
+    api_key=Config.CLOUDINARY_API_KEY,
+    api_secret=Config.CLOUDINARY_API_SECRET
+)
 
 user_routes = Blueprint('user_routes', __name__)
 
@@ -10,26 +22,20 @@ user_routes = Blueprint('user_routes', __name__)
 @user_routes.route('/register_user', methods=['POST'])
 def register_user():
   try:
-    # Log the incoming JSON data from the frontend || TO DO remove print log
     user_data = request.get_json()
-    print("Received data:", user_data)
     hashed_password = bcrypt.hashpw(user_data["password"].encode('utf-8'), bcrypt.gensalt())
 
     user_data["username"] = user_data["username"].lower()
     user_data["email"] = user_data["email"].lower()
 
-    # Get users collection from DB
     db = get_db()
     users = db.users
 
-    # Check if the username or email already exists in the database || TO DO remove print log
     existing_user = users.find_one({"$or": [{"username": user_data["username"]}, {"email": user_data["email"]}]})
-    print(f"Existing user found: {existing_user}")
     
     if existing_user:
       return jsonify({"error": "Username or email already exists"}), 400
 
-    # Insert the user into MongoDB users collection
     new_user = {
         "username": user_data["username"],
         "email": user_data["email"],
@@ -37,8 +43,6 @@ def register_user():
     }
 
     result = users.insert_one(new_user)
-    # TO DO remove logs
-    print(f"Inserted user with _id: {result.inserted_id}")
 
     return jsonify({f"message": "User registered successfully", "id": str(result.inserted_id)}), 201
   
@@ -59,8 +63,6 @@ def login_user():
     password = login_data.get("password").lower()
     email = login_data.get("email").lower()
 
-    print("Received data:", login_data)  # TO DO: remove log
-
     db = get_db()
     users = db.users
 
@@ -70,14 +72,9 @@ def login_user():
       return jsonify({"error": "User not found"}), 404
 
     if bcrypt.checkpw(password.encode('utf-8'), user['password']):
-      # Log user details before setting session
-      print(f"User authenticated: {user['username']}, Admin status: {user.get('is_admin', False)}")
       session['user_id'] = str(user['_id'])
       session['username'] = user['username']
       session['is_admin'] = user.get('is_admin', False)
-
-      # Log session data
-      print("Session data after login:", dict(session))
 
       return jsonify({
         "message": "Login successful",
@@ -92,25 +89,139 @@ def login_user():
     print(f"Error during login: {e}")
     return jsonify({"error": "An error occurred during login"}), 500
 
-
-
 # API endpoint 3: Log user out
 @user_routes.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     response = jsonify({"message": "Logged out successfully"})
     
-    # Expire the session cookie
     response.set_cookie('session', '', expires=0, samesite='Lax', secure=False)
     return response
 
+# API endpoint 4: updating a user in the DB
 
-# API endpoint 5: updating a user in the DB
-# API endpoint 6: deleting a user in the DB
+# API endpoint 5: deleting a user in the DB
 
-# API endpoint 7: adding a recipe in the DB
+# API endpoint 6: adding a recipe in the DB
+@user_routes.route('/add_recipe', methods=['POST'])
+def add_recipe():
+  try:
+    recipe_data = request.get_json()
 
+    db = get_db()
+    recipes = db.recipes
 
+    image_base64 = recipe_data.get("image")
+    image_url = None
+
+    if image_base64:
+        upload_result = cloudinary.uploader.upload(f"data:image/png;base64,{image_base64}")
+
+        image_url, _ = cloudinary_url(
+            upload_result['public_id'],
+            fetch_format="auto",  
+            quality="auto",      
+            crop="auto",         
+            gravity="auto",       
+            width=500,           
+            height=500           
+        )
+
+    created_at = recipe_data.get('created_at', None)
+    if created_at is None:
+       created_at = datetime.now(datetime.timezone.utc)
+
+    new_recipe = {
+        "title": recipe_data["title"],
+        "instructions": recipe_data["instructions"],
+        "ingredients": recipe_data["ingredients"],
+        "image": image_url,
+        "user_id": recipe_data["user_id"],
+        "created_at": created_at
+    }
+
+    result = recipes.insert_one(new_recipe)
+
+    return jsonify({f"message": "Recipe saved successfully", "id": str(result.inserted_id)}), 201
+  
+  except PyMongoError as e:
+    print(f"Error saving recipe into MongoDB: {e}")
+    return jsonify({"error": "Saving to database failed"}), 500
+
+  except Exception as e:
+    print(f"Unexpected error: {e}")
+    return jsonify({"error": "An unexpected error occurred"}), 500
+
+# API endpoint 7: getting all recipes from the DB TO DO
+@user_routes.route('/get_all_recipes', methods=['GET'])
+def get_all_recipes():
+  try:
+    db = get_db()
+    recipes = db.recipes
+    results = recipes.find()
+
+    for document in results:
+      print(document)
+  
+  except PyMongoError as e:
+    print(f"Error saving recipe into MongoDB: {e}")
+    return jsonify({"error": "Saving to database failed"}), 500
+
+  except Exception as e:
+    print(f"Unexpected error: {e}")
+    return jsonify({"error": "An unexpected error occurred"}), 500
+  
+# API endpoint 8: getting all recipes from a user from the DB
+@user_routes.route('/get_all_recipes_from_user', methods=['GET'])
+def get_all_recipes_from_user():
+    try:
+        user_id = request.args.get("user_id")
+
+        db = get_db()
+        recipes = db.recipes
+        
+        user_recipes = list(
+            recipes.find(
+                {"user_id": user_id}, 
+                {"title": 1, "image": 1, "_id": 1, "created_at": 1}
+            ).sort("created_at", DESCENDING)
+        )
+
+        if not user_recipes:
+            return jsonify({"error": "Recipes not found"}), 404
+        
+        for recipe in user_recipes:
+            recipe["_id"] = str(recipe["_id"])
+
+        return jsonify({"recipes": user_recipes}), 200
+
+    except Exception as e:
+        print(f"Error loading recipes: {e}")
+        return jsonify({"error": "An error occurred loading recipes"}), 500
+
+# API endpoint 9: deleting a recipe from the DB
+@user_routes.route('/delete_recipe', methods=['DELETE'])
+def delete_recipe():
+    try:
+        recipe_data = request.get_json()
+        print("recipe data:", recipe_data)
+        recipe_id = recipe_data.get("_id")
+        
+        if not recipe_id:
+          return jsonify({"error": "Recipe ID is required"}), 400
+
+        db = get_db()
+        result = db.recipes.delete_one({"_id": ObjectId(recipe_id)})
+
+        if result.deleted_count == 1:
+          return jsonify({"message": "Recipe deleted successfully"}), 200
+        else:
+          return jsonify({"error": "Recipe not found"}), 404
+
+    except Exception as e:
+        print(f"Error deleting recipe: {e}")
+        return jsonify({"error": "An error occurred deleting the recipe"}), 500
+    
 # API endpoint 8: adding a comment in the DB
 # API endpoint 9: updating a comment in the DB
 # API endpoint 10: deleting a comment in the DB

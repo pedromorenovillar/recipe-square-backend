@@ -10,6 +10,7 @@ pymongo = "*"
 python-dotenv = "*"
 bcrypt = "*"
 flask-session = "*"
+cloudinary = "*"
 
 [dev-packages]
 
