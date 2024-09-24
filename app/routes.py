@@ -222,6 +222,26 @@ def delete_recipe():
         print(f"Error deleting recipe: {e}")
         return jsonify({"error": "An error occurred deleting the recipe"}), 500
     
-# API endpoint 8: adding a comment in the DB
+# API endpoint 10: getting one recipe from the DB
+@user_routes.route('/get_one_recipe', methods=['GET'])
+def get_one_recipe():
+    try:
+        recipe_id = request.args.get("_id") 
+        print("recipe id:", recipe_id)
+        
+        db = get_db()
+        recipes = db.recipes
+        result = recipes.find_one(
+          {"_id": ObjectId(recipe_id)}, 
+          {"_id": 0, "title": 1, "instructions": 1, "ingredients": 1, "created_at": 1}
+          )
+
+        return jsonify({"recipe": result}), 200
+
+    except Exception as e:
+        print(f"Error finding recipe data: {e}")
+        return jsonify({"error": "An error occurred loading recipe data"}), 500
+
+# API endpoint 10: adding a comment in the DB
 # API endpoint 9: updating a comment in the DB
 # API endpoint 10: deleting a comment in the DB
