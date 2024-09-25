@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session
 from bson import ObjectId
+from bson.errors import InvalidId
 from .db import get_db
 from pymongo.errors import PyMongoError
 import bcrypt
@@ -152,7 +153,7 @@ def add_recipe():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
 
-# API endpoint 7: getting all recipes from the DB TO DO
+# API endpoint 7: getting all recipes from the DB || TO DO
 @user_routes.route('/get_all_recipes', methods=['GET'])
 def get_all_recipes():
   try:
@@ -222,26 +223,30 @@ def delete_recipe():
         print(f"Error deleting recipe: {e}")
         return jsonify({"error": "An error occurred deleting the recipe"}), 500
     
-# API endpoint 10: getting one recipe from the DB
-@user_routes.route('/get_one_recipe', methods=['GET'])
-def get_one_recipe():
+# API endpoint 10: getting one recipe from the DB by its ID
+@user_routes.route('/recipe/<recipe_id>', methods=['GET'])
+def get_recipe(recipe_id):
+    print('Received recipe ID:', recipe_id)
+    db = get_db()
+    recipes = db.recipes
     try:
-        recipe_id = request.args.get("_id") 
-        print("recipe id:", recipe_id)
-        
-        db = get_db()
-        recipes = db.recipes
-        result = recipes.find_one(
-          {"_id": ObjectId(recipe_id)}, 
-          {"_id": 0, "title": 1, "instructions": 1, "ingredients": 1, "created_at": 1}
-          )
+        recipe = recipes.find_one({"_id": ObjectId(recipe_id)})
+        if recipe:
+            recipe['_id'] = str(recipe['_id'])
+            return jsonify(recipe), 200
+        else:
+            return jsonify({"error": "Recipe not found"}), 404
+    except InvalidId:
+        return jsonify({"error": "Invalid recipe ID format"}), 400
 
-        return jsonify({"recipe": result}), 200
-
-    except Exception as e:
-        print(f"Error finding recipe data: {e}")
-        return jsonify({"error": "An error occurred loading recipe data"}), 500
-
+# Update recipe by ID || TO DO
+@user_routes.route('/api/update_recipe/<recipe_id>', methods=['PUT'])
+def update_recipe(recipe_id):
+    data = request.json
+    db = get_db()
+    recipes = db.recipes
+    recipes.update_one({"_id": ObjectId(recipe_id)}, {"$set": data})
+    return jsonify({"message": "Recipe updated successfully"})
 # API endpoint 10: adding a comment in the DB
 # API endpoint 9: updating a comment in the DB
 # API endpoint 10: deleting a comment in the DB
