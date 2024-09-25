@@ -99,11 +99,13 @@ def logout():
     response.set_cookie('session', '', expires=0, samesite='Lax', secure=False)
     return response
 
-# API endpoint 4: updating a user in the DB
+# API endpoint 4: getting all users from the DB
 
-# API endpoint 5: deleting a user in the DB
+# API endpoint 5: updating a user in the DB
 
-# API endpoint 6: adding a recipe in the DB
+# API endpoint 6: deleting a user in the DB
+
+# API endpoint 7: adding a recipe in the DB
 @user_routes.route('/add_recipe', methods=['POST'])
 def add_recipe():
   try:
@@ -153,7 +155,7 @@ def add_recipe():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
 
-# API endpoint 7: getting all recipes from the DB || TO DO
+# API endpoint 8: getting all recipes from the DB || TO DO
 @user_routes.route('/get_all_recipes', methods=['GET'])
 def get_all_recipes():
   try:
@@ -172,7 +174,7 @@ def get_all_recipes():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
   
-# API endpoint 8: getting all recipes from a user from the DB
+# API endpoint 9: getting all recipes from a user from the DB
 @user_routes.route('/get_all_recipes_from_user', methods=['GET'])
 def get_all_recipes_from_user():
     try:
@@ -200,7 +202,7 @@ def get_all_recipes_from_user():
         print(f"Error loading recipes: {e}")
         return jsonify({"error": "An error occurred loading recipes"}), 500
 
-# API endpoint 9: deleting a recipe from the DB
+# API endpoint 10: deleting a recipe from the DB
 @user_routes.route('/delete_recipe', methods=['DELETE'])
 def delete_recipe():
     try:
@@ -223,7 +225,7 @@ def delete_recipe():
         print(f"Error deleting recipe: {e}")
         return jsonify({"error": "An error occurred deleting the recipe"}), 500
     
-# API endpoint 10: getting one recipe from the DB by its ID
+# API endpoint 11: getting one recipe from the DB by its ID
 @user_routes.route('/recipe/<recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     print('Received recipe ID:', recipe_id)
@@ -239,14 +241,16 @@ def get_recipe(recipe_id):
     except InvalidId:
         return jsonify({"error": "Invalid recipe ID format"}), 400
 
-# Update recipe by ID || TO DO
-@user_routes.route('/api/update_recipe/<recipe_id>', methods=['PUT'])
+# API endpoint 12: updating a recipe
+@user_routes.route('/update_recipe/<recipe_id>', methods=['PUT'])
 def update_recipe(recipe_id):
     data = request.json
     db = get_db()
     recipes = db.recipes
     recipes.update_one({"_id": ObjectId(recipe_id)}, {"$set": data})
     return jsonify({"message": "Recipe updated successfully"})
-# API endpoint 10: adding a comment in the DB
-# API endpoint 9: updating a comment in the DB
-# API endpoint 10: deleting a comment in the DB
+
+# API endpoint 14: searching a recipe in the DB
+# API endpoint 13: adding a comment in the DB
+# API endpoint 14: updating a comment in the DB
+# API endpoint 15: deleting a comment in the DB
