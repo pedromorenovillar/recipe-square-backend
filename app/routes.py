@@ -40,7 +40,8 @@ def register_user():
     new_user = {
         "username": user_data["username"],
         "email": user_data["email"],
-        "password": hashed_password
+        "password": hashed_password,
+        "is_admin": user_data["is_admin"]
     }
 
     result = users.insert_one(new_user)
@@ -109,7 +110,7 @@ def get_all_users():
     all_users = list(
             users.find(
               {}, 
-              {"_id": 1, "username": 1, "email": 1, "password": 1, "is_admin": 1}
+              {"_id": 1, "username": 1, "email": 1, "is_admin": 1}
             )
         )
     for user in all_users:
