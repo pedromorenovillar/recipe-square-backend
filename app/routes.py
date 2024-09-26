@@ -25,8 +25,6 @@ def register_user():
   try:
     user_data = request.get_json()
     hashed_password = bcrypt.hashpw(user_data["password"].encode('utf-8'), bcrypt.gensalt())
-
-    user_data["username"] = user_data["username"].lower()
     user_data["email"] = user_data["email"].lower()
 
     db = get_db()
@@ -127,7 +125,27 @@ def get_all_users():
 # API endpoint 5: updating a user in the DB
 
 # API endpoint 6: deleting a user in the DB
+@user_routes.route('/delete_user', methods=['DELETE'])
+def delete_user():
+    try:
+        user_data = request.get_json()
+        user_id = user_data.get("_id")
+        
+        if not user_id:
+          return jsonify({"error": "User ID is required"}), 400
 
+        db = get_db()
+        users = db.users
+        result = users.delete_one({"_id": ObjectId(user_id)})
+
+        if result.deleted_count == 1:
+          return jsonify({"message": "User deleted successfully"}), 200
+        else:
+          return jsonify({"error": "User not found"}), 404
+
+    except Exception as e:
+        print(f"Error deleting user: {e}")
+        return jsonify({"error": "An error occurred deleting the user"}), 500
 # API endpoint 7: adding a recipe in the DB
 @user_routes.route('/add_recipe', methods=['POST'])
 def add_recipe():
