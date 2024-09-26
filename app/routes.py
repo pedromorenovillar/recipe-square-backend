@@ -100,7 +100,29 @@ def logout():
     return response
 
 # API endpoint 4: getting all users from the DB
+@user_routes.route('/get_all_users', methods=['GET'])
+def get_all_users():
+  try:
+    db = get_db()
+    users = db.users
 
+    all_users = list(
+            users.find(
+              {}, 
+              {"_id": 1, "username": 1, "email": 1, "password": 1, "is_admin": 1}
+            )
+        )
+    for user in all_users:
+        user["_id"] = str(user["_id"])
+    return jsonify({"users": all_users}), 200
+  
+  except PyMongoError as e:
+    print(f"Error getting users from MongoDB: {e}")
+    return jsonify({"error": "Loading from database failed"}), 500
+
+  except Exception as e:
+    print(f"Unexpected error: {e}")
+    return jsonify({"error": "An unexpected error occurred"}), 500
 # API endpoint 5: updating a user in the DB
 
 # API endpoint 6: deleting a user in the DB
@@ -155,20 +177,26 @@ def add_recipe():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
 
-# API endpoint 8: getting all recipes from the DB || TO DO
+# API endpoint 8: getting all recipes from the DB
 @user_routes.route('/get_all_recipes', methods=['GET'])
 def get_all_recipes():
   try:
     db = get_db()
     recipes = db.recipes
-    results = recipes.find()
 
-    for document in results:
-      print(document)
+    all_recipes = list(
+            recipes.find(
+              {}, 
+              {"user_id": 1, "title": 1, "image": 1, "_id": 1, "created_at": 1}
+            ).sort("created_at", DESCENDING)
+        )
+    for recipe in all_recipes:
+        recipe["_id"] = str(recipe["_id"])
+    return jsonify({"recipes": all_recipes}), 200
   
   except PyMongoError as e:
-    print(f"Error saving recipe into MongoDB: {e}")
-    return jsonify({"error": "Saving to database failed"}), 500
+    print(f"Error getting recipes from MongoDB: {e}")
+    return jsonify({"error": "Loading from database failed"}), 500
 
   except Exception as e:
     print(f"Unexpected error: {e}")
