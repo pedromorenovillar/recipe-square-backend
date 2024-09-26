@@ -122,8 +122,27 @@ def get_all_users():
   except Exception as e:
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
-# API endpoint 5: updating a user in the DB
+# API endpoint 5: updating user admin role in the DB
+@user_routes.route('/update_user_role/<user_id>', methods=['PUT'])
+def update_user_role(user_id):
+  try:
+    data = request.json
+    print(data)
+    updatedRole = data.get("is_admin")
 
+    db = get_db()
+    users = db.users
+    result = users.update_one({"_id": ObjectId(user_id)}, {"$set": {"is_admin": updatedRole}})
+
+    if result.modified_count == 1:
+            return jsonify({"message": "User role updated successfully"}), 200
+    else:
+        return jsonify({"message": "User role update failed"}), 400
+
+  except Exception as e:
+      print(f"Error updating user role: {e}")
+      return jsonify({"error": "An error occurred"}), 500
+  
 # API endpoint 6: deleting a user in the DB
 @user_routes.route('/delete_user', methods=['DELETE'])
 def delete_user():
