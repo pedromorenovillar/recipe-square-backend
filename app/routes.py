@@ -54,7 +54,7 @@ def register_user():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
   
-# API endpoint 2: login a user in the DB
+# API endpoint 2: logging in a user in the DB
 @user_routes.route('/login_user', methods=['POST'])
 def login_user():
   try:
@@ -89,7 +89,7 @@ def login_user():
     print(f"Error during login: {e}")
     return jsonify({"error": "An error occurred during login"}), 500
 
-# API endpoint 3: Log user out
+# API endpoint 3: logging a user out
 @user_routes.route('/logout', methods=['POST'])
 def logout():
     session.clear()
@@ -316,7 +316,18 @@ def update_recipe(recipe_id):
     recipes.update_one({"_id": ObjectId(recipe_id)}, {"$set": data})
     return jsonify({"message": "Recipe updated successfully"})
 
-# API endpoint 14: searching a recipe in the DB
-# API endpoint 13: adding a comment in the DB
-# API endpoint 14: updating a comment in the DB
-# API endpoint 15: deleting a comment in the DB
+# API endpoint 13: searching a recipe in the DB
+@user_routes.route('/search_recipes/<searchKey>', methods=['GET'])
+def search_recipes(searchKey):
+    if searchKey:
+        db = get_db()
+        print(f"searchkey: {searchKey}")
+        recipes = list(db.recipes.find({"title": {"$regex": searchKey, "$options": "i"}}))
+        print(f"Found recipes: {recipes}")
+        
+        for recipe in recipes:
+          recipe['_id'] = str(recipe['_id'])
+        suggestions = [{"title": recipe["title"], "id": str(recipe["_id"])} for recipe in recipes]
+        print(f"Suggestions: {suggestions}")
+        return jsonify(suggestions), 200
+    return jsonify([]), 200
