@@ -327,7 +327,7 @@ def search_recipes(searchKey):
         
         for recipe in recipes:
           recipe['_id'] = str(recipe['_id'])
-        suggestions = [{"title": recipe["title"], "id": str(recipe["_id"])} for recipe in recipes]
+        suggestions = [{"title": recipe["title"], "id": str(recipe["_id"]), "image": recipe["image"]} for recipe in recipes]
         print(f"Suggestions: {suggestions}")
         return jsonify(suggestions), 200
     return jsonify([]), 200
