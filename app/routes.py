@@ -331,3 +331,52 @@ def search_recipes(searchKey):
         print(f"Suggestions: {suggestions}")
         return jsonify(suggestions), 200
     return jsonify([]), 200
+
+# API endpoint 14: searching 3 recipes with images in the DB
+@user_routes.route('/get_three_random_recipes', methods=['GET'])
+def get_three_random_recipes():
+    try:
+        db = get_db()
+        recipes_collection = db.recipes
+
+        pipeline = [
+            {"$match": {"image": {"$exists": True, "$ne": None}}},
+            {"$sample": {"size": 3}},
+            {
+                "$addFields": {
+                    "user_id_obj": {"$convert": {"input": "$user_id", "to": "objectId", "onError": None}}
+                }
+            },
+            {
+                "$lookup": {
+                    "from": "users",
+                    "localField": "user_id_obj",
+                    "foreignField": "_id",
+                    "as": "user_info"
+                }
+            },
+            {"$unwind": "$user_info"},
+            {
+                "$project": {
+                    "title": 1,
+                    "image": 1,
+                    "_id": 1,
+                    "username": "$user_info.username"
+                }
+            }
+        ]
+
+        random_recipes = list(recipes_collection.aggregate(pipeline))
+        
+        for recipe in random_recipes:
+            recipe["_id"] = str(recipe["_id"])
+        
+        return jsonify({"recipes": random_recipes}), 200
+
+    except PyMongoError as e:
+        print(f"Error getting random recipes from MongoDB: {e}")
+        return jsonify({"error": "Loading from database failed"}), 500
+
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
