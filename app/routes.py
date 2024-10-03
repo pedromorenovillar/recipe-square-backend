@@ -18,6 +18,8 @@ cloudinary.config(
 )
 
 user_routes = Blueprint('user_routes', __name__)
+admin_routes = Blueprint('admin_routes', __name__)
+recipe_routes = Blueprint('recipe_routes', __name__)
 
 # API endpoint 1: registering a user in the DB
 @user_routes.route('/register_user', methods=['POST'])
@@ -99,7 +101,7 @@ def logout():
     return response
 
 # API endpoint 4: getting all users from the DB
-@user_routes.route('/get_all_users', methods=['GET'])
+@admin_routes.route('/get_all_users', methods=['GET'])
 def get_all_users():
   try:
     db = get_db()
@@ -123,7 +125,7 @@ def get_all_users():
     print(f"Unexpected error: {e}")
     return jsonify({"error": "An unexpected error occurred"}), 500
 # API endpoint 5: updating user admin role in the DB
-@user_routes.route('/update_user_role/<user_id>', methods=['PUT'])
+@admin_routes.route('/update_user_role/<user_id>', methods=['PUT'])
 def update_user_role(user_id):
   try:
     data = request.json
@@ -144,7 +146,7 @@ def update_user_role(user_id):
       return jsonify({"error": "An error occurred"}), 500
   
 # API endpoint 6: deleting a user in the DB
-@user_routes.route('/delete_user', methods=['DELETE'])
+@admin_routes.route('/delete_user', methods=['DELETE'])
 def delete_user():
     try:
         user_data = request.get_json()
@@ -166,7 +168,7 @@ def delete_user():
         print(f"Error deleting user: {e}")
         return jsonify({"error": "An error occurred deleting the user"}), 500
 # API endpoint 7: adding a recipe in the DB
-@user_routes.route('/add_recipe', methods=['POST'])
+@recipe_routes.route('/add_recipe', methods=['POST'])
 def add_recipe():
   try:
     recipe_data = request.get_json()
@@ -216,7 +218,7 @@ def add_recipe():
     return jsonify({"error": "An unexpected error occurred"}), 500
 
 # API endpoint 8: getting all recipes from the DB
-@user_routes.route('/get_all_recipes', methods=['GET'])
+@recipe_routes.route('/get_all_recipes', methods=['GET'])
 def get_all_recipes():
   try:
     db = get_db()
@@ -241,7 +243,7 @@ def get_all_recipes():
     return jsonify({"error": "An unexpected error occurred"}), 500
   
 # API endpoint 9: getting all recipes from a user from the DB
-@user_routes.route('/get_all_recipes_from_user', methods=['GET'])
+@recipe_routes.route('/get_all_recipes_from_user', methods=['GET'])
 def get_all_recipes_from_user():
     try:
         user_id = request.args.get("user_id")
@@ -269,7 +271,7 @@ def get_all_recipes_from_user():
         return jsonify({"error": "An error occurred loading recipes"}), 500
 
 # API endpoint 10: deleting a recipe from the DB
-@user_routes.route('/delete_recipe', methods=['DELETE'])
+@recipe_routes.route('/delete_recipe', methods=['DELETE'])
 def delete_recipe():
     try:
         recipe_data = request.get_json()
@@ -292,7 +294,7 @@ def delete_recipe():
         return jsonify({"error": "An error occurred deleting the recipe"}), 500
     
 # API endpoint 11: getting one recipe from the DB by its ID
-@user_routes.route('/recipe/<recipe_id>', methods=['GET'])
+@recipe_routes.route('/recipe/<recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
     print('Received recipe ID:', recipe_id)
     db = get_db()
@@ -308,7 +310,7 @@ def get_recipe(recipe_id):
         return jsonify({"error": "Invalid recipe ID format"}), 400
 
 # API endpoint 12: updating a recipe
-@user_routes.route('/update_recipe/<recipe_id>', methods=['PUT'])
+@recipe_routes.route('/update_recipe/<recipe_id>', methods=['PUT'])
 def update_recipe(recipe_id):
     data = request.json
     db = get_db()
@@ -317,7 +319,7 @@ def update_recipe(recipe_id):
     return jsonify({"message": "Recipe updated successfully"})
 
 # API endpoint 13: searching a recipe in the DB
-@user_routes.route('/search_recipes/<searchKey>', methods=['GET'])
+@recipe_routes.route('/search_recipes/<searchKey>', methods=['GET'])
 def search_recipes(searchKey):
     if searchKey:
         db = get_db()
@@ -333,7 +335,7 @@ def search_recipes(searchKey):
     return jsonify([]), 200
 
 # API endpoint 14: searching 3 recipes with images in the DB
-@user_routes.route('/get_three_random_recipes', methods=['GET'])
+@recipe_routes.route('/get_three_random_recipes', methods=['GET'])
 def get_three_random_recipes():
     try:
         db = get_db()

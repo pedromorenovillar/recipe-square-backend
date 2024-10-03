@@ -2,7 +2,7 @@ from flask import Flask, session
 from flask_session import Session
 from flask_cors import CORS
 from .db import init_db
-from .routes import user_routes
+from .routes import user_routes, admin_routes, recipe_routes
 from .config import Config
 
 def create_app():
@@ -20,6 +20,8 @@ def create_app():
     
     # Registers blueprints or routes
     app.register_blueprint(user_routes, url_prefix='/api')
+    app.register_blueprint(admin_routes, url_prefix='/api')
+    app.register_blueprint(recipe_routes, url_prefix='/api')
 
     # Imports config
     app.config.from_object(Config)
