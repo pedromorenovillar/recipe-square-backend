@@ -11,6 +11,7 @@ python-dotenv = "*"
 bcrypt = "*"
 flask-session = "*"
 cloudinary = "*"
+flask-mail = "*"
 
 [dev-packages]
 

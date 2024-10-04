@@ -5,3 +5,4 @@ python-dotenv
 bcrypt
 flask-session
 cloudinary
+Flask-Mail

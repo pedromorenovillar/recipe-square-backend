@@ -8,8 +8,11 @@ import cloudinary
 import cloudinary.uploader
 from cloudinary.utils import cloudinary_url
 from app.config import Config
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pymongo import DESCENDING
+import uuid
+from flask_mail import Message
+from .mail import mail
 
 cloudinary.config(
     cloud_name=Config.CLOUDINARY_CLOUD_NAME,
@@ -20,6 +23,22 @@ cloudinary.config(
 user_routes = Blueprint('user_routes', __name__)
 admin_routes = Blueprint('admin_routes', __name__)
 recipe_routes = Blueprint('recipe_routes', __name__)
+
+# Function used in API endpoint 15
+def send_password_reset_email(user_email, reset_link):
+  try:
+      msg = Message("Password reset for Recipe Square",
+                    recipients=[user_email],
+                    body=("Hi there!\n\n"
+                          "Here is the password reset link for your Recipe Square account:\n\n"
+                          f"{reset_link}\n\n"
+                          "You can safely ignore this email if you did not request a new password.\n\n"
+                          "Kind regards,\n\n"
+                          "Recipe Square"))
+      mail.send(msg)
+      print(f"Password reset email sent to {user_email}")
+  except Exception as e:
+      print(f"Failed to send email: {e}")
 
 # API endpoint 1: registering a user in the DB
 @user_routes.route('/register_user', methods=['POST'])
@@ -382,3 +401,67 @@ def get_three_random_recipes():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return jsonify({"error": "An unexpected error occurred"}), 500
+
+# API endpoint 15: receiving password reset request    
+@user_routes.route('/request_password_reset', methods=['POST'])
+def request_password_reset():
+  try:
+      data = request.get_json()
+      print(data)
+      email = data.get("email").lower()
+
+      db = get_db()
+      users = db.users
+
+      user = users.find_one({"email": email})
+      if not user:
+          return jsonify({"error": "Email not found"}), 404
+      
+      reset_token = str(uuid.uuid4())
+      reset_token_expiration = datetime.now() + timedelta(hours=1)
+
+      users.update_one({"email": email}, {"$set": {
+          "reset_token": reset_token,
+          "reset_token_expiration": reset_token_expiration
+      }})
+
+      reset_link = f'http://localhost:8000/reset-password?token={reset_token}'
+
+      send_password_reset_email(email, reset_link)
+
+      return jsonify({"message": "Password reset link sent"}), 200
+
+  except Exception as e:
+      print(f"Error during password reset request: {e}")
+      return jsonify({"error": "An error occurred"}), 500
+  
+# API endpoint 16: resetting the password
+@user_routes.route('/reset_password/<token>', methods=['POST'])
+def reset_password(token):
+    try:
+        data = request.get_json()
+        new_password = data.get("password")
+
+        db = get_db()
+        users = db.users
+
+        user = users.find_one({
+            "reset_token": token,
+            "reset_token_expiration": {"$gt": datetime.now()}
+        })
+
+        if not user:
+            return jsonify({"error": "Invalid or expired token"}), 400
+
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+        users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {"password": hashed_password}, "$unset": {"reset_token": "", "reset_token_expiration": ""}}
+        )
+
+        return jsonify({"message": "Password reset successfully"}), 200
+
+    except Exception as e:
+        print(f"Error during password reset: {e}")
+        return jsonify({"error": "An error occurred"}), 500
