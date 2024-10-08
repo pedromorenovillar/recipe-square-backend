@@ -8,7 +8,6 @@ def init_db(app):
   MONGODB_URI = os.getenv('MONGODB_URI')
   client = MongoClient(MONGODB_URI)
   db = client.get_database("recipe_square")
-  # TODO change DB name if needed when final DB is implemented
 
 def get_db():
   return db
