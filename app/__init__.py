@@ -12,6 +12,10 @@ import os
 
 def create_app():
     app = Flask(__name__)
+
+    # Imports config before accessing app.config
+    app.config.from_object(Config)  # Load configuration from Config class
+
     logging.info(f"ENV: {app.config['ENV']}")
     logging.info(f"FLASK_ENV: {os.getenv('FLASK_ENV')}")
 
@@ -36,9 +40,6 @@ def create_app():
     app.register_blueprint(user_routes, url_prefix='/api')
     app.register_blueprint(admin_routes, url_prefix='/api')
     app.register_blueprint(recipe_routes, url_prefix='/api')
-
-    # Imports config
-    app.config.from_object(Config)
 
     # Initializes Flask-Mail with the app
     mail.init_app(app)
