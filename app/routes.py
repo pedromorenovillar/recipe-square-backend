@@ -208,7 +208,8 @@ def add_recipe():
             crop="auto",         
             gravity="auto",       
             width=500,           
-            height=500           
+            height=500,
+            secure=True           
         )
 
     created_at = recipe_data.get('created_at', None)
