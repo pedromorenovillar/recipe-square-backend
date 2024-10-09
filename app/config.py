@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Config:
+  ENV = os.getenv("ENV")
   MONGODB_URI = os.getenv("MONGODB_URI")
   SECRET_KEY = os.getenv("SECRET_KEY")
   SESSION_COOKIE_NAME = 'session'
