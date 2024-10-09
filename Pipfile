@@ -12,6 +12,7 @@ bcrypt = "*"
 flask-session = "*"
 cloudinary = "*"
 flask-mail = "*"
+gunicorn = "*"
 
 [dev-packages]
 

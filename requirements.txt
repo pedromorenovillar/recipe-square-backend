@@ -6,3 +6,4 @@ bcrypt
 flask-session
 cloudinary
 Flask-Mail
+gunicorn
