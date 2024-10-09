@@ -6,10 +6,14 @@ from .routes import user_routes, admin_routes, recipe_routes
 from .config import Config
 from flask_mail import Mail
 from .mail import mail
+import logging
+import os
 
 
 def create_app():
     app = Flask(__name__)
+    logging.info(f"ENV: {app.config['ENV']}")
+    logging.info(f"FLASK_ENV: {os.getenv('FLASK_ENV')}")
 
     # Session configuration
     app.config['SESSION_TYPE'] = 'filesystem'
