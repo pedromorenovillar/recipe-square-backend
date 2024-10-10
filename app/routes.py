@@ -426,7 +426,7 @@ def request_password_reset():
           "reset_token_expiration": reset_token_expiration
       }})
 
-      reset_link = f'http://localhost:8000/reset-password?token={reset_token}'
+      reset_link = f'https://recipe-square-frontend-5c021339c6db.herokuapp.com/reset-password?token={reset_token}'
 
       send_password_reset_email(email, reset_link)
 
