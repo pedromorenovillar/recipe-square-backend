@@ -1,4 +1,13 @@
-## Project structure
+## Backend repository for the Recipe Square Project
+
+For detailed information about the project, please check the [frontend repository](https://github.com/pedromorenovillar/recipe-square-frontend).
+
+## Backend languages
+
+- Python with Flask
+- MongoDB Cloud Atlas (for the DB) and Cloudinary (for recipe image storage)
+
+## Backend structure
 
 ```bash
 recipe-square-backend/
@@ -17,3 +26,8 @@ recipe-square-backend/
 ├── requirements.txt         # Dependencies
 └── run.py                   # Main entry point to run the Flask app
 ```
+
+## Future improvements
+
+- Add commenting feature API routes
+- Add rating feature API routes
