@@ -1,4 +1,4 @@
-## Backend repository for the Recipe Square Project
+## Backend repository for the project Recipe Square
 
 For detailed information about the project, please check the [frontend repository](https://github.com/pedromorenovillar/recipe-square-frontend).
 
